@@ -1,5 +1,6 @@
 # Noise2Noise:Learning Image Restoration without Clean Data
-Unofficial code, using pyrch to implement n2n
+Unofficial code, using pyrch to implement n2n\
+*Hai Zhou et al. 2022.2*
 
 **Abstract**:
 
