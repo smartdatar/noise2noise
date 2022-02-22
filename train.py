@@ -2,12 +2,11 @@ import torch
 from dataset.dataLoader import Data
 from torchvision.transforms import transforms
 from dataset.utils import RecoverImage
-from PIL import Image
+from vision import plot_loss
 from network import AutoEncoder
 from torch.optim import Adam, SGD, lr_scheduler
 import torch.nn as nn
 import os
-import shutil
 import time
 import skimage
 import numpy as np
@@ -64,10 +63,10 @@ class Trainer:
 
         self.model.to(self.device)
 
-        self.optimizer = Adam(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.weight_decay)
+        self.optimizer = Adam(self.model.parameters(), lr=self.args.lr, betas=(0.9,0.99), )
         self.scheduler = lr_scheduler.ReduceLROnPlateau(self.optimizer, patience=self.args.epochs/4, factor=0.5, verbose=True)
         # self.optimizer = SGD(self.model.parameters(), lr=1e-3)
-        self.avg = Avg()
+
         if self.args.loss == "L2":
             self.criterion = nn.MSELoss()
         elif self.args.loss == "L1":
@@ -83,24 +82,27 @@ class Trainer:
 
     def run(self):
         for epoch in range(1, self.args.epochs + 1):
-            mean_loss = []
+            avg = Avg()
             for batch, (inputs, targets) in enumerate(self.dataLoader, 1):
                 inputs = inputs.to(self.device)
                 targets = targets.to(self.device)
-
                 output = self.model(inputs)
                 loss = self.criterion(output, targets)
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-                mean_loss.append(loss.item())
-            self.losses.append(sum(mean_loss)/len(mean_loss))
+
+                avg(loss.item())
+            mean_loss = avg.mean
+            self.losses.append(mean_loss)
+            self.scheduler.step(mean_loss)
             if epoch % self.args.eval_interval == 0:
                 self.verify(epoch)
 
         torch.save(self.model.state_dict(), self.save_path + 'model.pt')
         loss_array = np.array(self.losses)
         np.savetxt(self.save_path+'loss.txt', loss_array)
+        plot_loss(loss_array, self.save_path+'loss.png')
         self.logger.info("successful!!!")
         self.logger.info(
             "总耗时: %dh%dm%ds" % (self.sum_cost_time // 3600, (self.sum_cost_time % 3600) // 60, self.sum_cost_time % 60))
@@ -142,6 +144,6 @@ class Trainer:
         self.psnr_file.flush()
         used_time = int(b - self.start_time)
         used_time_str = "%dm%02ds" % (used_time // 60, used_time % 60)
-        self.logger.info("iter: %d/%d [=======]  used_time:  %s  mean_psnr: %.4f      " % (epoch, self.args.epochs, used_time_str, mean_psnr))
+        self.logger.info("iter: %d/%d [=======]  used_time: %s  mean_psnr: %.4f      " % (epoch, self.args.epochs, used_time_str, mean_psnr))
         self.start_time = b
         self.sum_cost_time += used_time
