@@ -4,7 +4,7 @@ from torchvision.transforms import transforms
 from dataset.utils import RecoverImage
 from PIL import Image
 from network import AutoEncoder
-from torch.optim import Adam, SGD
+from torch.optim import Adam, SGD, lr_scheduler
 import torch.nn as nn
 import os
 import shutil
@@ -12,6 +12,7 @@ import time
 import skimage
 import numpy as np
 import logging
+from utils import Avg
 
 class Trainer:
     """
@@ -64,7 +65,9 @@ class Trainer:
         self.model.to(self.device)
 
         self.optimizer = Adam(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.weight_decay)
+        self.scheduler = lr_scheduler.ReduceLROnPlateau(self.optimizer, patience=self.args.epochs/4, factor=0.5, verbose=True)
         # self.optimizer = SGD(self.model.parameters(), lr=1e-3)
+        self.avg = Avg()
         if self.args.loss == "L2":
             self.criterion = nn.MSELoss()
         elif self.args.loss == "L1":
