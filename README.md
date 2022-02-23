@@ -28,6 +28,16 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
+**Data requires**
+
+We use the dataset link below
+* [COCO](http://cocodataset.org/#download)
+* [BSD300](https://www2.eecs.berkeley.edu/Research/Projects/CS/vision/bsds/BSDS300-images.tgz)
+* [Kodak](http://r0k.us/graphics/kodak/)
+
+Move the contents of the downloaded data folder 
+to the folder corresponding to the `./dataset/data/`
+
 **Dataset**
 
 This time, the training data set is BSD300, and the validation 

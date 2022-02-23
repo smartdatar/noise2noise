@@ -34,23 +34,23 @@ args.logger.setLevel(level=logging.DEBUG)
 
 if __name__ == "__main__":
 
-    # datasets = ['BSD300', 'COCO']
-    # noises = ['Poisson', 'Gaussian', 'Salt']
-    #
-    # for dataset in datasets:
-    #     for noise in noises:
-    #         args.dataset = dataset
-    #         args.noise = noise
-    #         trainer = Trainer(args)
-    #         if args.varity:
-    #             trainer.verify(1)
-    #         else:
-    #             trainer.run()
-    #         trainer.remove_handler()
-    #         torch.cuda.empty_cache()
+    datasets = ['BSD300', 'COCO']
+    noises = ['Poisson', 'Gaussian', 'Salt']
 
-    trainer = Trainer(args)
-    if args.varity:
-        trainer.verify(1)
-    else:
-        trainer.run()
+    for dataset in datasets:
+        for noise in noises:
+            args.dataset = dataset
+            args.noise = noise
+            trainer = Trainer(args)
+            if args.varity:
+                trainer.verify(1)
+            else:
+                trainer.run()
+            trainer.remove_handler()
+            torch.cuda.empty_cache()
+
+    # trainer = Trainer(args)
+    # if args.varity:
+    #     trainer.verify(1)
+    # else:
+    #     trainer.run()
