@@ -2,10 +2,11 @@ from torch.utils.data import Dataset
 from torchvision.transforms import transforms
 from PIL import Image
 import torch
+from pathlib import PureWindowsPath as wp
 import torch.nn as nn
 import os
 import numpy as np
-from dataset.utils import PadImage, AddSaltPepperNoise, AddGaussianNoise
+from dataset.utils import PadImage, AddSaltPepperNoise, AddGaussianNoise, AddPoissonNoise
 
 
 class Kodak(Dataset):
@@ -15,6 +16,8 @@ class Kodak(Dataset):
         self.add_noise = AddGaussianNoise(args.GaussianParams[0], args.GaussianParams[1])
         if args.noise == "Salt":
             self.add_noise = AddSaltPepperNoise(args.SaltParams[0], args.SaltParams[1])
+        elif args.noise == "Poisson":
+            self.add_noise = AddPoissonNoise()
 
         self.padImage = PadImage()
         self.totensor = transforms.ToTensor()
@@ -28,8 +31,9 @@ class Kodak(Dataset):
         targets = img.copy().transpose([2, 0, 1])
         img = self.add_noise(img)
         img = self.totensor(img)
-
-        return img, targets, int(self.img_paths[item][-6:-4]), w, h
+        p = wp(self.img_paths[item])
+        code = p.name.split('.')[0][-2:]
+        return img, targets, int(code), w, h
 
     def __len__(self):
         return len(self.img_paths)

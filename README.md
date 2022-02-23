@@ -36,9 +36,11 @@ we need to perform some operations on the data set before training,
 and extract the data of all pictures into a file, so that in the 
 Can save a lot of disk operation time when training.
 
-* Please use the following operations to extract the dataset
+* Please use the following operations to extract the dataset(an image is randomly cropped twice)
 
-  `python3 dataset/utils.py --extract`
+  `python3 dataset/utils.py --extract --num_img 2`
+
+
 
 **Train**
 

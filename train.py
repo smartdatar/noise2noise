@@ -29,9 +29,11 @@ class Trainer:
         if not os.path.exists('result'):
             os.mkdir('result')
         dirlist = os.listdir('result')
-        save_file = "%05d-autoencoder-%s-%s/" % (len(dirlist) + 1,
-                                                 self.args.dataset,
-                                                 self.args.method,)
+        save_file = "%05d-autoencoder-%s-%s-%s/" % (len(dirlist) + 1,
+                                                    self.args.dataset,
+                                                    self.args.method,
+                                                    self.args.noise,
+                                                    )
         self.save_path = "result/" + save_file
         os.mkdir(self.save_path)
         # self.run()
@@ -39,10 +41,16 @@ class Trainer:
         self.logger = args.logger
         self.setLog()
 
+    def remove_handler(self):
+        while len(self.logger.handlers) != 0:
+            handler = self.logger.handlers[0]
+            self.logger.removeHandler(handler)
+
+
     def setLog(self):
 
-        self.psnr_file = open(self.save_path+'psnr.csv','a')
-        self.psnr_file.write("iter,psnr")
+        self.psnr_file = open(self.save_path+'evaluate.csv','a')
+        self.psnr_file.write("iter,psnr,ssim")
         self.psnr_file.flush()
 
         fileHandler = logging.FileHandler(self.save_path+"log.txt")
@@ -96,8 +104,8 @@ class Trainer:
             mean_loss = avg.mean
             self.losses.append(mean_loss)
             self.scheduler.step(mean_loss)
-            if epoch % self.args.eval_interval == 0:
-                self.verify(epoch)
+            # if epoch % self.args.eval_interval == 0:
+            self.verify(epoch)
 
         torch.save(self.model.state_dict(), self.save_path + 'model.pt')
         loss_array = np.array(self.losses)
@@ -124,26 +132,31 @@ class Trainer:
 
     def verify(self, epoch):
         psnrs = []
+        ssims = []
         for img, targets, code, w, h in self.varityLoader:
 
             noise_img = img.clone().detach()
             img = img.to(self.device)
             output = self.model(img)
-            self.save_img(targets[0], noise_img[0], output[0].cpu().detach(), code[0].item(), w[0].item(), h[0].item(), epoch)
+            if epoch % self.args.eval_interval == 0:
+                self.save_img(targets[0], noise_img[0], output[0].cpu().detach(), code[0].item(), w[0].item(), h[0].item(), epoch)
             ori_img = targets[0].numpy().transpose([1, 2, 0])
             pred_img = output[0].detach().cpu().numpy().transpose([1, 2, 0])
             pred_img = np.uint8(pred_img*255)
             pred_img = np.clip(pred_img, 0, 255)
 
             psnr = skimage.metrics.peak_signal_noise_ratio(ori_img, pred_img)
-            psnrs.append(psnr)
 
+            ssim = skimage.metrics.structural_similarity(ori_img, pred_img, data_range=255,channel_axis=2)
+            psnrs.append(psnr)
+            ssims.append(ssim)
         b = time.time()
         mean_psnr = sum(psnrs)/len(psnrs)
-        self.psnr_file.write("\n%d,%.3f"%(epoch, mean_psnr))
+        mean_ssim = sum(ssims)/len(ssims)
+        self.psnr_file.write("\n%d,%.3f,%.3f"%(epoch, mean_psnr,mean_ssim))
         self.psnr_file.flush()
         used_time = int(b - self.start_time)
         used_time_str = "%dm%02ds" % (used_time // 60, used_time % 60)
-        self.logger.info("iter: %d/%d [=======]  used_time: %s  mean_psnr: %.4f      " % (epoch, self.args.epochs, used_time_str, mean_psnr))
+        self.logger.info("iter: %d/%d [=======]  used_time: %s  mean_psnr: %.4f  mean_ssim: %.4f" % (epoch, self.args.epochs, used_time_str, mean_psnr, mean_ssim))
         self.start_time = b
         self.sum_cost_time += used_time

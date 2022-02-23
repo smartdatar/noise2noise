@@ -3,11 +3,13 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from dataset.BSD300 import BSDDataTrain, BSDDataTest
 from dataset.Kodak import Kodak
-
+from dataset.COCO import COCOTrain
 class Data:
     def __init__(self, args):
         if args.dataset == "BSD300":
             data = BSDDataTrain(args)
+        elif args.dataset == "COCO":
+            data = COCOTrain(args)
 
         self.dataLoader = DataLoader(data, shuffle=True, batch_size=args.batch_size)
         self.len = data.__len__()

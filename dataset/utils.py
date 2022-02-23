@@ -65,15 +65,62 @@ class AddSaltPepperNoise(object):
             return img
 
 
+
+class AddPoissonNoise(object):
+
+
+    def __init__(self):
+        pass
+
+    def __call__(self, img):
+        """
+        :param img: type : array (h w c)
+        :return: Image
+        """
+
+
+        img = skimage.util.random_noise(img, mode="poisson")
+        img = np.uint8(img * 255)
+        return Image.fromarray(img)
+
+
+
 class ExtractData:
 
     def __init__(self, args):
         self.args = args
         self.bsd_paths_train = ["dataset/data/BSD300/images/train"]
+        self.coco_paths_train = ['dataset/data/COCO2017val/']
         self.transform = transforms.Compose([
             transforms.RandomResizedCrop([256, 256]),
         ])
         # self.extract_bsd()
+
+    def extract_coco(self):
+        img_list = []
+        for path in self.coco_paths_train:
+            print("提取 %s" % path)
+
+            for filename in tqdm(os.listdir(path), ncols=90):
+
+                file_path = path + '/' + filename
+
+                img = Image.open(file_path)
+                for num_img in range(self.args.num_img):
+                    croped_img = self.transform(img)
+
+                    img_array = np.asarray(croped_img)
+                    if not img_array.shape == (256, 256, 3):
+                        continue
+                    # img_array = img_array.transpose([2,0,1])
+                    img_list.append(img_array)
+
+        img_list = np.stack(img_list, axis=0)
+        data = {'Img': img_list}
+        path = "dataset/data/COCO_train.mat"
+        print("正在保存 %s" % path)
+        io.savemat(path, data)
+        print("保存完成!!!!")
 
     def extract_bsd(self):
         img_list = []
@@ -147,10 +194,11 @@ class RecoverImage:
 if __name__ == "__main__":
     parse = argparse.ArgumentParser()
     parse.add_argument('--extract', action="store_true", )
-    parse.add_argument("--num_img", type=int, help="每张训练图像随机裁剪多少次", default=4)
+    parse.add_argument("--num_img", type=int, help="每张训练图像随机裁剪多少次", default=2)
     args = parse.parse_args()
 
     if args.extract:
         print("即将提取数据...")
         extract = ExtractData(args)
         extract.extract_bsd()
+        extract.extract_coco()
