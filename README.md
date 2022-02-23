@@ -64,3 +64,7 @@ Validation is performed every 30 epochs by default during training.
 
 **Varity**
 
+**Results**
+
+The output is saved in the `./results/` folder for each training.
+
