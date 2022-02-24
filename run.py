@@ -6,12 +6,12 @@ from train import Trainer
 import torch
 import logging
 parse = argparse.ArgumentParser()
-parse.add_argument('--epochs', type=int, help="迭代次数", default=1000)
+parse.add_argument('--epochs', type=int, help="迭代次数", default=300)
 parse.add_argument('--method', type=str, choices=['n2n', 'n2c'], help="方法", default="n2n")
 parse.add_argument('--batch_size', type=int, help="批次大小", default=40)
 parse.add_argument("--lr", type=float, help="学习率", default=0.001)
 # parse.add_argument('--weight_decay', type=float, help="权重衰减参数", default=0)
-parse.add_argument('--eval_interval', type=int, help="迭代多少次进行一次图片保存", default=50)
+parse.add_argument('--eval_interval', type=int, help="迭代多少次进行一次图片保存", default=30)
 parse.add_argument("--varity", action="store_true", help="是否直接验证，默认是false")
 parse.add_argument("--loss", type=str, choices=["L1", "L2"], default="L2")
 parse.add_argument('--method_decoder', type=str, help="解码方法", choices=['convt',], default='convt')
@@ -34,23 +34,23 @@ args.logger.setLevel(level=logging.DEBUG)
 
 if __name__ == "__main__":
 
-    datasets = ['BSD300', 'COCO']
-    noises = ['Poisson', 'Gaussian', 'Salt']
-
-    for dataset in datasets:
-        for noise in noises:
-            args.dataset = dataset
-            args.noise = noise
-            trainer = Trainer(args)
-            if args.varity:
-                trainer.verify(1)
-            else:
-                trainer.run()
-            trainer.remove_handler()
-            torch.cuda.empty_cache()
-
-    # trainer = Trainer(args)
-    # if args.varity:
-    #     trainer.verify(1)
-    # else:
-    #     trainer.run()
+    # datasets = ['BSD300', 'COCO']
+    # noises = ['Gaussian', 'Poisson', 'Salt']
+    #
+    # for dataset in datasets:
+    #     for noise in noises:
+    #         args.dataset = dataset
+    #         args.noise = noise
+    #         trainer = Trainer(args)
+    #         if args.varity:
+    #             trainer.verify(1)
+    #         else:
+    #             trainer.run()
+    #         trainer.remove_handler()
+    #         torch.cuda.empty_cache()
+    
+    trainer = Trainer(args)
+    if args.varity:
+        trainer.verify(1)
+    else:
+        trainer.run()

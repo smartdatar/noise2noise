@@ -115,7 +115,7 @@ class Trainer:
         self.logger.info(
             "总耗时: %dh%dm%ds" % (self.sum_cost_time // 3600, (self.sum_cost_time % 3600) // 60, self.sum_cost_time % 60))
 
-    def save_img(self, ori_img, noise_img, pred_img, code, w, h, epoch):
+    def save_img(self, ori_img, noise_img, pred_img, code, w, h, epoch, psnr):
 
 
         transform = transforms.Compose([
@@ -127,8 +127,8 @@ class Trainer:
         recover_pred_img = transform(pred_img)
         if epoch == self.args.eval_interval:
             recover_ori_img.save(self.save_path + "img_%d_ori.png" % (code,))
-        recover_noise_img.save(self.save_path + "epoch_%d_img_%d_noise.png" % (epoch, code,))
-        recover_pred_img.save(self.save_path + "epoch_%d_img_%d_pred.png" % (epoch, code,))
+        recover_noise_img.save(self.save_path + "epoch_%d_img_%d_psnr_%.2f_noise.png" % (epoch, code, psnr))
+        recover_pred_img.save(self.save_path + "epoch_%d_img_%d_psnr_%.2f_pred.png" % (epoch, code, psnr))
 
     def verify(self, epoch):
         psnrs = []
@@ -138,8 +138,7 @@ class Trainer:
             noise_img = img.clone().detach()
             img = img.to(self.device)
             output = self.model(img)
-            if epoch % self.args.eval_interval == 0:
-                self.save_img(targets[0], noise_img[0], output[0].cpu().detach(), code[0].item(), w[0].item(), h[0].item(), epoch)
+
             ori_img = targets[0].numpy().transpose([1, 2, 0])
             pred_img = output[0].detach().cpu().numpy().transpose([1, 2, 0])
             pred_img = np.uint8(pred_img*255)
@@ -150,6 +149,8 @@ class Trainer:
             ssim = skimage.metrics.structural_similarity(ori_img, pred_img, data_range=255,channel_axis=2)
             psnrs.append(psnr)
             ssims.append(ssim)
+            if epoch % self.args.eval_interval == 0:
+                self.save_img(targets[0], noise_img[0], output[0].cpu().detach(), code[0].item(), w[0].item(), h[0].item(), epoch, psnr)
         b = time.time()
         mean_psnr = sum(psnrs)/len(psnrs)
         mean_ssim = sum(ssims)/len(ssims)
